@@ -1,0 +1,36 @@
+{
+  "name": "astexplorer-refmt",
+  "version": "1.0.0",
+  "description": "JavaScript wrapper for refmt parser to be used in astexplorer.net",
+  "license": "MIT",
+  "main": "dist/AstExplorerRefmt.bc.js",
+  "esy": {
+    "build": "refmterr dune build ./src/AstExplorerRefmt.bc.js",
+    "NOTE": "Optional release Section. Customizes result of `esy release`",
+    "release": {
+      "releasedBinaries": ["AstExplorerRefmt.exe"],
+      "deleteFromBinaryRelease": ["*esy_ocaml_*", "*refmterr-*", "ocaml-*"]
+    }
+  },
+  "scripts": {
+    "build:watch": "refmterr dune build ./src/AstExplorerRefmt.bc.js -w",
+    "build:prod": "refmterr dune build --profile=prod -f ./src/AstExplorerRefmt.bc.js"
+  },
+  "dependencies": {
+    "@opam/js_of_ocaml": "~3.2.0",
+    "@opam/js_of_ocaml-ppx": "~3.2.0",
+    "@opam/dune": "*",
+    "@esy-ocaml/reason": "3.4.0",
+    "refmterr": "*",
+    "ocaml": "~4.6.0"
+  },
+  "resolutions": {
+    "@esy-ocaml/esy-installer": "0.0.1",
+    "@opam/menhir": "20171013",
+    "@opam/re": "1.8.0"
+  },
+  "devDependencies": {
+    "@esy-ocaml/merlin": "*",
+    "ocaml": "~4.6.0"
+  }
+}

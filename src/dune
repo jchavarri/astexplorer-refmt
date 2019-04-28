@@ -1,0 +1,6 @@
+(executable
+  (name AstExplorerRefmt)
+  (public_name AstExplorerRefmt.exe)
+  (libraries reason)
+  (preprocess (pps js_of_ocaml-ppx))
+)
