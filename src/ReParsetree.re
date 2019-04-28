@@ -6,7 +6,10 @@ let rec handlePattern = ({ppat_desc, ppat_loc, ppat_attributes}) => [%js
     val ppat_desc_ = handlePatternDesc(ppat_desc);
     val ppat_loc_ = ReLocation.handleLocation(ppat_loc);
     val ppat_attributes_ =
-      List.map(handleAttribute, ppat_attributes) |> Array.of_list |> Js.array
+      ppat_attributes
+      |> List.map(handleAttribute)
+      |> Array.of_list
+      |> Js.array
   }
 ]
 and handlePatternDesc = patternDesc => {
@@ -18,7 +21,7 @@ and handlePatternDesc = patternDesc => {
     [%js
       {
         val type_ = "Ppat_var" |> Js.string;
-        val string_loc_ = ReAsttypes.stringLoc(stringLoc)
+        val string_loc_ = ReAsttypes.handleStringLoc(stringLoc)
       }
     ]
     |> Js.Unsafe.coerce
@@ -27,7 +30,7 @@ and handlePatternDesc = patternDesc => {
       {
         val type_ = "Ppat_alias" |> Js.string;
         val pattern = handlePattern(pattern);
-        val string_loc_ = ReAsttypes.stringLoc(stringLoc)
+        val string_loc_ = ReAsttypes.handleStringLoc(stringLoc)
       }
     ]
     |> Js.Unsafe.coerce
@@ -57,49 +60,128 @@ and handlePatternDesc = patternDesc => {
       }
     ]
     |> Js.Unsafe.coerce
-  | Ppat_construct(_idLoc, _maybePattern) =>
-    %js
-    {val type_ = "TODO: Ppat_construct" |> Js.string}
-  | Ppat_variant(_label, _maybePattern) =>
-    %js
-    {val type_ = "TODO: Ppat_variant" |> Js.string}
-  | Ppat_record(_idLocsPatterns, _closedFlag) =>
-    %js
-    {val type_ = "TODO: Ppat_record" |> Js.string}
-  | Ppat_array(_patterns) =>
-    %js
-    {val type_ = "TODO: Ppat_array" |> Js.string}
-  | Ppat_or(_patternA, _patternB) =>
-    %js
-    {val type_ = "TODO: Ppat_or" |> Js.string}
-  | Ppat_constraint(_pattern, _coreType) =>
-    %js
-    {val type_ = "TODO: Ppat_constraint" |> Js.string}
-  | Ppat_type(_idLoc) =>
-    %js
-    {val type_ = "TODO: Ppat_type" |> Js.string}
-  | Ppat_lazy(_pattern) =>
-    %js
-    {val type_ = "TODO: Ppat_lazy" |> Js.string}
-  | Ppat_unpack(_stringLoc) =>
-    %js
-    {val type_ = "TODO: Ppat_unpack" |> Js.string}
-  | Ppat_exception(_pattern) =>
-    %js
-    {val type_ = "TODO: Ppat_exception" |> Js.string}
-  | Ppat_extension(_extension) =>
-    %js
-    {val type_ = "TODO: Ppat_extension" |> Js.string}
-  | Ppat_open(_idLoc, _pattern) =>
-    %js
-    {val type_ = "TODO: Ppat_open" |> Js.string}
+  | Ppat_construct(idLoc, maybePattern) =>
+    [%js
+      {
+        val type_ = "Ppat_construct" |> Js.string;
+        val id_loc_ = ReAsttypes.handleIdLoc(idLoc);
+        val pattern = maybePattern |> Utils.handleOption(handlePattern)
+      }
+    ]
+    |> Js.Unsafe.coerce
+  | Ppat_variant(label, maybePattern) =>
+    [%js
+      {
+        val type_ = "Ppat_variant" |> Js.string;
+        val label = label |> Js.string;
+        val pattern = maybePattern |> Utils.handleOption(handlePattern)
+      }
+    ]
+    |> Js.Unsafe.coerce
+  | Ppat_record(idLocsPatterns, closedFlag) =>
+    [%js
+      {
+        val type_ = "Ppat_record" |> Js.string;
+        val patterns =
+          idLocsPatterns
+          |> List.map(((idLoc, pattern)) =>
+               (ReAsttypes.handleIdLoc(idLoc), handlePattern(pattern))
+               |> Utils.unsafeFromTuple
+             )
+          |> Array.of_list
+          |> Js.array;
+        val closed_flag = ReAsttypes.handleClosedFlag(closedFlag)
+      }
+    ]
+    |> Js.Unsafe.coerce
+  | Ppat_array(patterns) =>
+    [%js
+      {
+        val type_ = "Ppat_array" |> Js.string;
+        val patterns =
+          patterns |> List.map(handlePattern) |> Array.of_list |> Js.array
+      }
+    ]
+    |> Js.Unsafe.coerce
+  | Ppat_or(patternA, patternB) =>
+    [%js
+      {
+        val type_ = "Ppat_or" |> Js.string;
+        val patternA = patternA |> handlePattern;
+        val patternB = patternB |> handlePattern
+      }
+    ]
+    |> Js.Unsafe.coerce
+  | Ppat_constraint(pattern, coreType) =>
+    [%js
+      {
+        val type_ = "Ppat_constraint" |> Js.string;
+        val pattern = pattern |> handlePattern;
+        val core_type_ = coreType |> handleCoreType
+      }
+    ]
+    |> Js.Unsafe.coerce
+  | Ppat_type(idLoc) =>
+    [%js
+      {
+        val type_ = "Ppat_type" |> Js.string;
+        val id_loc_ = ReAsttypes.handleIdLoc(idLoc)
+      }
+    ]
+    |> Js.Unsafe.coerce
+  | Ppat_lazy(pattern) =>
+    [%js
+      {
+        val type_ = "Ppat_lazy" |> Js.string;
+        val pattern = pattern |> handlePattern
+      }
+    ]
+    |> Js.Unsafe.coerce
+  | Ppat_unpack(stringLoc) =>
+    [%js
+      {
+        val type_ = "Ppat_unpack" |> Js.string;
+        val string_loc_ = ReAsttypes.handleStringLoc(stringLoc)
+      }
+    ]
+    |> Js.Unsafe.coerce
+  | Ppat_exception(pattern) =>
+    [%js
+      {
+        val type_ = "Ppat_exception" |> Js.string;
+        val pattern = pattern |> handlePattern
+      }
+    ]
+    |> Js.Unsafe.coerce
+  | Ppat_extension(extension) =>
+    [%js
+      {
+        val type_ = "Ppat_extension" |> Js.string;
+        val extension = handleExtension(extension)
+      }
+    ]
+    |> Js.Unsafe.coerce
+  | Ppat_open(idLoc, pattern) =>
+    [%js
+      {
+        val type_ = "Ppat_open" |> Js.string;
+        val id_loc_ = ReAsttypes.handleIdLoc(idLoc);
+        val pattern = pattern |> handlePattern
+      }
+    ]
+    |> Js.Unsafe.coerce
   };
 }
 and handleExpressionDesc = exprDesc =>
   switch (exprDesc) {
-  | Pexp_ident(_idLoc) =>
-    %js
-    {val type_ = "TODO: Pexp_ident" |> Js.string}
+  | Pexp_ident(idLoc) =>
+    [%js
+      {
+        val type_ = "Pexp_ident" |> Js.string;
+        val id_loc_ = ReAsttypes.handleIdLoc(idLoc)
+      }
+    ]
+    |> Js.Unsafe.coerce
   | Pexp_constant(constant) =>
     [%js
       {
@@ -108,39 +190,79 @@ and handleExpressionDesc = exprDesc =>
       }
     ]
     |> Js.Unsafe.coerce
-  | Pexp_let(_recFlag, _valueBindings, _expression) =>
-    %js
-    {val type_ = "TODO: Pexp_let" |> Js.string}
+  | Pexp_let(recFlag, valueBindings, expression) =>
+    [%js
+      {
+        val type_ = "Pexp_let" |> Js.string;
+        val rec_flag_ = recFlag |> ReAsttypes.recFlag;
+        val value_bindings_ =
+          valueBindings
+          |> List.map(handleValueBinding)
+          |> Array.of_list
+          |> Js.array;
+        val expression = handleExpression(expression)
+      }
+    ]
+    |> Js.Unsafe.coerce
   | Pexp_function(_cases) =>
     %js
     {val type_ = "TODO: Pexp_function" |> Js.string}
-  | Pexp_fun(argLabel, maybeExpression, pattern, expression) =>
+  | Pexp_fun(argLabel, argExpression, pattern, expression) =>
     [%js
       {
         val type_ = "Pexp_fun" |> Js.string;
         val arg_label_ = ReAsttypes.handleArgLabel(argLabel);
         val arg_expression_ =
-          maybeExpression |> Utils.handleOption(handleExpression);
+          argExpression |> Utils.handleOption(handleExpression);
         val pattern = handlePattern(pattern);
         val expression = handleExpression(expression)
       }
     ]
     |> Js.Unsafe.coerce
-  | Pexp_apply(_expression, _argLabelExpressions) =>
-    %js
-    {val type_ = "TODO: Pexp_apply" |> Js.string}
+  | Pexp_apply(expression, args) =>
+    [%js
+      {
+        val type_ = "Pexp_apply" |> Js.string;
+        val args =
+          args
+          |> List.map(((label, argExpr)) =>
+               (ReAsttypes.handleArgLabel(label), handleExpression(argExpr))
+               |> Utils.unsafeFromTuple
+             )
+          |> Array.of_list
+          |> Js.array;
+        val expression = handleExpression(expression)
+      }
+    ]
+    |> Js.Unsafe.coerce
   | Pexp_match(_expression, _cases) =>
     %js
     {val type_ = "TODO: Pexp_match" |> Js.string}
   | Pexp_try(_expression, _cases) =>
     %js
     {val type_ = "TODO: Pexp_try" |> Js.string}
-  | Pexp_tuple(_expressions) =>
-    %js
-    {val type_ = "TODO: Pexp_tuple" |> Js.string}
-  | Pexp_construct(_idLoc, _maybeExpression) =>
-    %js
-    {val type_ = "TODO: Pexp_construct" |> Js.string}
+  | Pexp_tuple(expressions) =>
+    [%js
+      {
+        val type_ = "Pexp_tuple" |> Js.string;
+        val expressions =
+          expressions
+          |> List.map(handleExpression)
+          |> Array.of_list
+          |> Js.array
+      }
+    ]
+    |> Js.Unsafe.coerce
+  | Pexp_construct(idLoc, maybeExpression) =>
+    [%js
+      {
+        val type_ = "Pexp_construct" |> Js.string;
+        val id_loc_ = ReAsttypes.handleIdLoc(idLoc);
+        val expression =
+          maybeExpression |> Utils.handleOption(handleExpression)
+      }
+    ]
+    |> Js.Unsafe.coerce
   | Pexp_variant(_label, _maybeExpression) =>
     %js
     {val type_ = "TODO: Pexp_variant" |> Js.string}
@@ -232,11 +354,18 @@ and handleExpression = ({pexp_desc, pexp_loc, pexp_attributes}) => [%js
     val pexp_desc_ = handleExpressionDesc(pexp_desc);
     val pexp_loc_ = ReLocation.handleLocation(pexp_loc);
     val pexp_attributes_ =
-      List.map(handleAttribute, pexp_attributes) |> Array.of_list |> Js.array
+      pexp_attributes
+      |> List.map(handleAttribute)
+      |> Array.of_list
+      |> Js.array
   }
 ]
 and handleAttribute = ((loc, payload)) =>
-  Utils.unsafeFromTuple((ReAsttypes.stringLoc(loc), handlePayload(payload)))
+  Utils.unsafeFromTuple((
+    ReAsttypes.handleStringLoc(loc),
+    handlePayload(payload),
+  ))
+and handleExtension = e => handleAttribute(e)
 and handlePayload = payload =>
   switch (payload) {
   | PStr(_structure) => "PStr" |> Js.string
@@ -282,18 +411,47 @@ and handleConstant = constant =>
       }
     ]
     |> Js.Unsafe.coerce
-  };
-
-let handleValueBinding = ({pvb_pat, pvb_expr, pvb_attributes, pvb_loc}) => [%js
+  }
+and handleValueBinding = ({pvb_pat, pvb_expr, pvb_attributes, pvb_loc}) => [%js
   {
     val type_ = "value_binding" |> Js.string;
     val pvb_pat_ = handlePattern(pvb_pat);
     val pvb_expr_ = handleExpression(pvb_expr);
     val pvb_attributes_ =
-      List.map(handleAttribute, pvb_attributes) |> Array.of_list |> Js.array;
+      pvb_attributes |> List.map(handleAttribute) |> Array.of_list |> Js.array;
     val pvb_loc_ = ReLocation.handleLocation(pvb_loc)
   }
-];
+]
+and handleCoreType = ({ptyp_desc, ptyp_loc, ptyp_attributes}) => [%js
+  {
+    val type_ = "core_type" |> Js.string;
+    val ptyp_desc_ = handleCoreTypeDesc(ptyp_desc);
+    val ptyp_loc_ = ReLocation.handleLocation(ptyp_loc);
+    val ptyp_attributes_ =
+      ptyp_attributes
+      |> List.map(handleAttribute)
+      |> Array.of_list
+      |> Js.array
+  }
+]
+and handleCoreTypeDesc = coreTypeDesc =>
+  switch (coreTypeDesc) {
+  | Ptyp_any => "TODO: Ptyp_any" |> Js.string
+  | Ptyp_var(_string) => "TODO: Ptyp_var" |> Js.string
+  | Ptyp_arrow(_label, _coreTypeA, _coreTypeB) =>
+    "TODO: Ptyp_arrow" |> Js.string
+  | Ptyp_tuple(_coreTypes) => "TODO: Ptyp_tuple" |> Js.string
+  | Ptyp_constr(_idLoc, _coreTypes) => "TODO: Ptyp_constr" |> Js.string
+  | Ptyp_object(_objectFields, _closedFlag) =>
+    "TODO: Ptyp_object" |> Js.string
+  | Ptyp_class(_idLoc, _coreTypes) => "TODO: Ptyp_class" |> Js.string
+  | Ptyp_alias(_coreType, _string) => "TODO: Ptyp_alias" |> Js.string
+  | Ptyp_variant(_rowFields, _closedFlag, _maybeLabels) =>
+    "TODO: Ptyp_variant" |> Js.string
+  | Ptyp_poly(_strLocs, _coreType) => "TODO: Ptyp_poly" |> Js.string
+  | Ptyp_package(_packageType) => "TODO: Ptyp_package" |> Js.string
+  | Ptyp_extension(_extension) => "TODO: Ptyp_extension" |> Js.string
+  };
 
 let handleStrItemDesc = strItemDesc =>
   switch (strItemDesc) {
@@ -364,5 +522,5 @@ let handleStructureItem = ({pstr_desc, pstr_loc}) => {
 };
 
 let handleStructure = structure => {
-  List.map(handleStructureItem, structure) |> Array.of_list |> Js.array;
+  structure |> List.map(handleStructureItem) |> Array.of_list |> Js.array;
 };

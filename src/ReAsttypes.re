@@ -10,6 +10,12 @@ let recFlag = r =>
     {val type_ = "Recursive" |> Js.string}
   };
 
+let handleClosedFlag = f =>
+  switch (f) {
+  | Closed => "Closed"
+  | Open => "Open"
+  };
+
 let handleArgLabel = argLabel =>
   switch (argLabel) {
   | Nolabel =>
@@ -23,10 +29,18 @@ let handleArgLabel = argLabel =>
     |> Js.Unsafe.coerce
   };
 
-let stringLoc = ({txt, loc}) => [%js
+let handleStringLoc = ({txt, loc}) => [%js
   {
     val type_ = "Asttypes.loc(string)" |> Js.string;
     val txt = txt |> Js.string;
+    val loc = ReLocation.handleLocation(loc)
+  }
+];
+
+let handleIdLoc = ({txt, loc}) => [%js
+  {
+    val type_ = "Asttypes.loc(Longident.t)" |> Js.string;
+    val txt = txt |> ReLongident.handleLongident;
     val loc = ReLocation.handleLocation(loc)
   }
 ];

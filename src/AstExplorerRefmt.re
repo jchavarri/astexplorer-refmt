@@ -54,7 +54,9 @@ let parseWith = (f, code) => {
   /* you can't throw an Error here. jsoo parses the string and turns it
      into something else */
   let throwAnything =
-    Js.Unsafe.js_expr("function(a) {throw new SyntaxError(JSON.stringify(a))}");
+    Js.Unsafe.js_expr(
+      "function(a) {throw new SyntaxError(JSON.stringify(a))}",
+    );
   try (code |> Lexing.from_string |> f) {
   /* from ocaml and reason */
   | Syntaxerr.Error(err) =>
@@ -104,6 +106,6 @@ let parse = code => {
   };
 };
 
-log("parse", parse("let f = a => \"1\"; /* Bla */ let a = 2;"));
+log("parse", parse("let f = a => \"1\"; /* Bla */ let a = f(2);"));
 
 Js.export_all([%js {val parse = a => a |> Js.to_string |> parse}]);

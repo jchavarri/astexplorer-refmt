@@ -1,4 +1,4 @@
-# refmt-js
+# astexplorer-refmt
 
 A project that includes the minimum configuration for a [js_of_ocaml](http://ocsigen.org/js_of_ocaml/) project using Reason and [Esy](https://github.com/esy-ocaml/esy).
 
@@ -20,4 +20,6 @@ And test the compiled JS executable, open `index.html` in your browser.
 
 To generate the production build (without sourcemaps, and minified) run:
 
-    % esy run build:prod
+    % yarn run build:prod
+
+The output bundle will be stored in the `./dist` folder.

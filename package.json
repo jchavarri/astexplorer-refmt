@@ -21,6 +21,6 @@
   "license": "MIT",
   "main": "dist/AstExplorerRefmt.bc.js",
   "scripts": {
-    "build:prod": "esy build:prod && esy -q sh -c 'cp $cur__target_dir/default/src/AstExplorerRefmt.bc.js ./dist'"
+    "build:prod": "esy build:prod && esy cp '#{self.target_dir}/default/src/AstExplorerRefmt.bc.js' ./dist"
   }
 }
