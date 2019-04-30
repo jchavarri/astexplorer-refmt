@@ -1,6 +1,38 @@
 open Migrate_parsetree.Ast_404.Parsetree;
 
-let rec handlePattern = ({ppat_desc, ppat_loc, ppat_attributes}) => [%js
+let rec handleModuleExpr = ({pmod_desc, pmod_loc, pmod_attributes}) => [%js
+  {
+    val type_ = "module_expr" |> Js.string;
+    val pmod_desc_ = handleModuleExprDesc(pmod_desc);
+    val pmod_loc_ = ReLocation.handleLocation(pmod_loc);
+    val pmod_attributes_ =
+      pmod_attributes
+      |> List.map(handleAttribute)
+      |> Array.of_list
+      |> Js.array
+  }
+]
+and handleModuleExprDesc = moduleExpr =>
+  switch (moduleExpr) {
+  | Pmod_ident(_idloc) => "TODO: Pmod_ident" |> Js.string
+  | Pmod_structure(_structure) => "TODO: Pmod_structure" |> Js.string
+  | Pmod_functor(_stringLoc, _maybeModuleType, _moduleExpr) =>
+    "TODO: Pmod_functor" |> Js.string
+  | Pmod_apply(_moduleExpr1, _moduleExpr2) => "TODO: Pmod_apply" |> Js.string
+  | Pmod_constraint(_moduleExpr, _moduleType) =>
+    "TODO: Pmod_constraint" |> Js.string
+  | Pmod_unpack(_expression) => "TODO: Pmod_unpack" |> Js.string
+  | Pmod_extension(_extension) => "TODO: Pmod_extension" |> Js.string
+  }
+and handleCase = ({pc_lhs, pc_guard, pc_rhs}) => [%js
+  {
+    val type_ = "case" |> Js.string;
+    val pc_lhs_ = pc_lhs |> handlePattern;
+    val pc_guard_ = pc_guard |> Utils.handleOption(handleExpression);
+    val pc_rhs_ = pc_rhs |> handleExpression
+  }
+]
+and handlePattern = ({ppat_desc, ppat_loc, ppat_attributes}) => [%js
   {
     val type_ = "pattern" |> Js.string;
     val ppat_desc_ = handlePatternDesc(ppat_desc);
@@ -204,9 +236,14 @@ and handleExpressionDesc = exprDesc =>
       }
     ]
     |> Js.Unsafe.coerce
-  | Pexp_function(_cases) =>
-    %js
-    {val type_ = "TODO: Pexp_function" |> Js.string}
+  | Pexp_function(cases) =>
+    [%js
+      {
+        val type_ = "Pexp_function" |> Js.string;
+        val cases = cases |> List.map(handleCase) |> Array.of_list |> Js.array
+      }
+    ]
+    |> Js.Unsafe.coerce
   | Pexp_fun(argLabel, argExpression, pattern, expression) =>
     [%js
       {
@@ -223,6 +260,7 @@ and handleExpressionDesc = exprDesc =>
     [%js
       {
         val type_ = "Pexp_apply" |> Js.string;
+        val expression = handleExpression(expression);
         val args =
           args
           |> List.map(((label, argExpr)) =>
@@ -230,17 +268,28 @@ and handleExpressionDesc = exprDesc =>
                |> Utils.unsafeFromTuple
              )
           |> Array.of_list
-          |> Js.array;
-        val expression = handleExpression(expression)
+          |> Js.array
       }
     ]
     |> Js.Unsafe.coerce
-  | Pexp_match(_expression, _cases) =>
-    %js
-    {val type_ = "TODO: Pexp_match" |> Js.string}
-  | Pexp_try(_expression, _cases) =>
-    %js
-    {val type_ = "TODO: Pexp_try" |> Js.string}
+  | Pexp_match(expression, cases) =>
+    [%js
+      {
+        val type_ = "Pexp_match" |> Js.string;
+        val expression = expression |> handleExpression;
+        val cases = cases |> List.map(handleCase) |> Array.of_list |> Js.array
+      }
+    ]
+    |> Js.Unsafe.coerce
+  | Pexp_try(expression, cases) =>
+    [%js
+      {
+        val type_ = "Pexp_try" |> Js.string;
+        val expression = expression |> handleExpression;
+        val cases = cases |> List.map(handleCase) |> Array.of_list |> Js.array
+      }
+    ]
+    |> Js.Unsafe.coerce
   | Pexp_tuple(expressions) =>
     [%js
       {
@@ -263,91 +312,370 @@ and handleExpressionDesc = exprDesc =>
       }
     ]
     |> Js.Unsafe.coerce
-  | Pexp_variant(_label, _maybeExpression) =>
-    %js
-    {val type_ = "TODO: Pexp_variant" |> Js.string}
-  | Pexp_record(_idLocExpressions, _maybeExpression) =>
-    %js
-    {val type_ = "TODO: Pexp_record" |> Js.string}
-  | Pexp_field(_expression, _idLoc) =>
-    %js
-    {val type_ = "TODO: Pexp_field" |> Js.string}
-  | Pexp_setfield(_expression, _idLoc, _fieldExpression) =>
-    %js
-    {val type_ = "TODO: Pexp_setfield" |> Js.string}
-  | Pexp_array(_expressions) =>
-    %js
-    {val type_ = "TODO: Pexp_array" |> Js.string}
-  | Pexp_ifthenelse(_ifExpression, _thenExpression, _maybeExpression) =>
-    %js
-    {val type_ = "TODO: Pexp_ifthenelse" |> Js.string}
-  | Pexp_sequence(_expression, _seqExpression) =>
-    %js
-    {val type_ = "TODO: Pexp_sequence" |> Js.string}
-  | Pexp_while(_condExpression, _expression) =>
-    %js
-    {val type_ = "TODO: Pexp_while" |> Js.string}
+  | Pexp_variant(label, maybeExpression) =>
+    [%js
+      {
+        val type_ = "Pexp_variant" |> Js.string;
+        val label = label |> Js.string;
+        val expression =
+          maybeExpression |> Utils.handleOption(handleExpression)
+      }
+    ]
+    |> Js.Unsafe.coerce
+  | Pexp_record(idLocExpressions, maybeExpression) =>
+    [%js
+      {
+        val type_ = "Pexp_construct" |> Js.string;
+        val fields =
+          idLocExpressions
+          |> List.map(((idLoc, expression)) =>
+               (ReAsttypes.handleIdLoc(idLoc), handleExpression(expression))
+               |> Utils.unsafeFromTuple
+             )
+          |> Array.of_list
+          |> Js.array;
+        val expression =
+          maybeExpression |> Utils.handleOption(handleExpression)
+      }
+    ]
+    |> Js.Unsafe.coerce
+  | Pexp_field(expression, idLoc) =>
+    [%js
+      {
+        val type_ = "Pexp_field" |> Js.string;
+        val expression = expression |> handleExpression;
+        val id_loc_ = ReAsttypes.handleIdLoc(idLoc)
+      }
+    ]
+    |> Js.Unsafe.coerce
+  | Pexp_setfield(expression, idLoc, fieldExpression) =>
+    [%js
+      {
+        val type_ = "Pexp_setfield" |> Js.string;
+        val expression = expression |> handleExpression;
+        val id_loc_ = ReAsttypes.handleIdLoc(idLoc);
+        val field_expr_ = fieldExpression |> handleExpression
+      }
+    ]
+    |> Js.Unsafe.coerce
+  | Pexp_array(expressions) =>
+    [%js
+      {
+        val type_ = "Pexp_array" |> Js.string;
+        val expressions =
+          expressions
+          |> List.map(handleExpression)
+          |> Array.of_list
+          |> Js.array
+      }
+    ]
+    |> Js.Unsafe.coerce
+  | Pexp_ifthenelse(ifExpression, thenExpression, elseExpression) =>
+    [%js
+      {
+        val type_ = "Pexp_ifthenelse" |> Js.string;
+        val if_expr_ = ifExpression |> handleExpression;
+        val then_expr_ = thenExpression |> handleExpression;
+        val else_expr_ =
+          elseExpression |> Utils.handleOption(handleExpression)
+      }
+    ]
+    |> Js.Unsafe.coerce
+  | Pexp_sequence(expression, seqExpression) =>
+    [%js
+      {
+        val type_ = "Pexp_sequence" |> Js.string;
+        val expression = expression |> handleExpression;
+        val seq_expr_ = seqExpression |> handleExpression
+      }
+    ]
+    |> Js.Unsafe.coerce
+  | Pexp_while(condExpression, expression) =>
+    [%js
+      {
+        val type_ = "Pexp_while" |> Js.string;
+        val cond_expr = condExpression |> handleExpression;
+        val expression = expression |> handleExpression
+      }
+    ]
+    |> Js.Unsafe.coerce
   | Pexp_for(
-      _pattern,
-      _startExpression,
-      _endExpression,
-      _directionFlag,
-      _expression,
+      pattern,
+      startExpression,
+      endExpression,
+      directionFlag,
+      expression,
     ) =>
-    %js
-    {val type_ = "TODO: Pexp_for" |> Js.string}
-  | Pexp_constraint(_expression, _core_type) =>
-    %js
-    {val type_ = "TODO: Pexp_constraint" |> Js.string}
-  | Pexp_coerce(_expression, _maybeCoreType, _core_type) =>
-    %js
-    {val type_ = "TODO: Pexp_coerce" |> Js.string}
-  | Pexp_send(_expression, _labelLoc) =>
-    %js
-    {val type_ = "TODO: Pexp_send" |> Js.string}
-  | Pexp_new(_idLoc) =>
-    %js
-    {val type_ = "TODO: Pexp_new" |> Js.string}
-  | Pexp_setinstvar(_labelLoc, _expression) =>
-    %js
-    {val type_ = "TODO: Pexp_setinstvar" |> Js.string}
-  | Pexp_override(_labelLocExpressions) =>
-    %js
-    {val type_ = "TODO: Pexp_override" |> Js.string}
-  | Pexp_letmodule(_stringLoc, _module_expr, _expression) =>
-    %js
-    {val type_ = "TODO: Pexp_letmodule" |> Js.string}
-  | Pexp_letexception(_extension_constructor, _expression) =>
-    %js
-    {val type_ = "TODO: Pexp_letexception" |> Js.string}
-  | Pexp_assert(_expression) =>
-    %js
-    {val type_ = "TODO: Pexp_assert" |> Js.string}
-  | Pexp_lazy(_expression) =>
-    %js
-    {val type_ = "TODO: Pexp_lazy" |> Js.string}
-  | Pexp_poly(_expression, _maybeCoreType) =>
-    %js
-    {val type_ = "TODO: Pexp_poly" |> Js.string}
-  | Pexp_object(_class_structure) =>
-    %js
-    {val type_ = "TODO: Pexp_object" |> Js.string}
-  | Pexp_newtype(_stringLoc, _expression) =>
-    %js
-    {val type_ = "TODO: Pexp_newtype" |> Js.string}
-  | Pexp_pack(_module_expr) =>
-    %js
-    {val type_ = "TODO: Pexp_pack" |> Js.string}
-  | Pexp_open(_overrideFlag, _idLoc, _expression) =>
-    %js
-    {val type_ = "TODO: Pexp_open" |> Js.string}
-  | Pexp_extension(_extension) =>
-    %js
-    {val type_ = "TODO: Pexp_extension" |> Js.string}
+    [%js
+      {
+        val type_ = "Pexp_for" |> Js.string;
+        val pattern = pattern |> handlePattern;
+        val start_expr_ = startExpression |> handleExpression;
+        val end_expr_ = endExpression |> handleExpression;
+        val direction_flag_ = directionFlag |> ReAsttypes.handleDirectionFlag;
+        val expression = expression |> handleExpression
+      }
+    ]
+    |> Js.Unsafe.coerce
+  | Pexp_constraint(expression, coreType) =>
+    [%js
+      {
+        val type_ = "Pexp_constraint" |> Js.string;
+        val expression = expression |> handleExpression;
+        val core_type_ = coreType |> handleCoreType
+      }
+    ]
+    |> Js.Unsafe.coerce
+  | Pexp_coerce(expression, maybeCoreType, coreType) =>
+    [%js
+      {
+        val type_ = "Pexp_coerce" |> Js.string;
+        val expression = expression |> handleExpression;
+        val opt_core_type_ =
+          maybeCoreType |> Utils.handleOption(handleCoreType);
+        val core_type_ = coreType |> handleCoreType
+      }
+    ]
+    |> Js.Unsafe.coerce
+  | Pexp_send(expression, label) =>
+    [%js
+      {
+        val type_ = "Pexp_send" |> Js.string;
+        val expression = expression |> handleExpression;
+        val label = label |> Js.string
+      }
+    ]
+    |> Js.Unsafe.coerce
+  | Pexp_new(idLoc) =>
+    [%js
+      {
+        val type_ = "Pexp_new" |> Js.string;
+        val id_loc_ = ReAsttypes.handleIdLoc(idLoc)
+      }
+    ]
+    |> Js.Unsafe.coerce
+  | Pexp_setinstvar(labelLoc, expression) =>
+    [%js
+      {
+        val type_ = "Pexp_setinstvar" |> Js.string;
+        val label_loc_ = ReAsttypes.handleStringLoc(labelLoc);
+        val expression = expression |> handleExpression
+      }
+    ]
+    |> Js.Unsafe.coerce
+  | Pexp_override(labelLocExpressions) =>
+    [%js
+      {
+        val type_ = "Pexp_override" |> Js.string;
+        val expressions =
+          labelLocExpressions
+          |> List.map(((stringLoc, expression)) =>
+               (
+                 ReAsttypes.handleStringLoc(stringLoc),
+                 handleExpression(expression),
+               )
+               |> Utils.unsafeFromTuple
+             )
+          |> Array.of_list
+          |> Js.array
+      }
+    ]
+    |> Js.Unsafe.coerce
+  | Pexp_letmodule(stringLoc, moduleExpr, expression) =>
+    [%js
+      {
+        val type_ = "Pexp_letmodule" |> Js.string;
+        val string_loc_ = ReAsttypes.handleStringLoc(stringLoc);
+        val module_expr_ = handleModuleExpr(moduleExpr);
+        val expression = expression |> handleExpression
+      }
+    ]
+    |> Js.Unsafe.coerce
+  | Pexp_letexception(extensionConstructor, expression) =>
+    [%js
+      {
+        val type_ = "Pexp_letexception" |> Js.string;
+        val extension_constructor_ =
+          extensionConstructor |> handleExtensionConstructor;
+        val expression = expression |> handleExpression
+      }
+    ]
+    |> Js.Unsafe.coerce
+  | Pexp_assert(expression) =>
+    [%js
+      {
+        val type_ = "Pexp_assert" |> Js.string;
+        val expression = expression |> handleExpression
+      }
+    ]
+    |> Js.Unsafe.coerce
+  | Pexp_lazy(expression) =>
+    [%js
+      {
+        val type_ = "Pexp_lazy" |> Js.string;
+        val expression = expression |> handleExpression
+      }
+    ]
+    |> Js.Unsafe.coerce
+  | Pexp_poly(expression, maybeCoreType) =>
+    [%js
+      {
+        val type_ = "Pexp_poly" |> Js.string;
+        val expression = expression |> handleExpression;
+        val core_type_ = maybeCoreType |> Utils.handleOption(handleCoreType)
+      }
+    ]
+    |> Js.Unsafe.coerce
+  | Pexp_object(classStructure) =>
+    [%js
+      {
+        val type_ = "Pexp_object" |> Js.string;
+        val class_structure_ = classStructure |> handleClassStructure
+      }
+    ]
+    |> Js.Unsafe.coerce
+  | Pexp_newtype(label, expression) =>
+    [%js
+      {
+        val type_ = "Pexp_newtype" |> Js.string;
+        val label = label |> Js.string;
+        val expression = expression |> handleExpression
+      }
+    ]
+    |> Js.Unsafe.coerce
+  | Pexp_pack(moduleExpr) =>
+    [%js
+      {
+        val type_ = "Pexp_pack" |> Js.string;
+        val module_expr_ = handleModuleExpr(moduleExpr)
+      }
+    ]
+    |> Js.Unsafe.coerce
+  | Pexp_open(overrideFlag, idLoc, expression) =>
+    [%js
+      {
+        val type_ = "Pexp_open" |> Js.string;
+        val override_flag_ = overrideFlag |> ReAsttypes.handleOverrideFlag;
+        val id_loc_ = ReAsttypes.handleIdLoc(idLoc);
+        val expression = expression |> handleExpression
+      }
+    ]
+    |> Js.Unsafe.coerce
+  | Pexp_extension(extension) =>
+    [%js
+      {
+        val type_ = "Pexp_extension" |> Js.string;
+        val extension = extension |> handleExtension
+      }
+    ]
+    |> Js.Unsafe.coerce
   | Pexp_unreachable =>
     %js
-    {val type_ = "TODO: Pexp_unreachable" |> Js.string}
+    {val type_ = "Pexp_unreachable" |> Js.string}
   }
+and handleClassStructure = ({pcstr_self, pcstr_fields}) => [%js
+  {
+    val type_ = "class_structure" |> Js.string;
+    val pcstr_self_ = handlePattern(pcstr_self);
+    val pcstr_fields_ =
+      pcstr_fields |> List.map(handleClassField) |> Array.of_list |> Js.array
+  }
+]
+and handleClassField = ({pcf_desc, pcf_loc, pcf_attributes}) => [%js
+  {
+    val type_ = "class_field" |> Js.string;
+    val pcf_desc_ = pcf_desc |> handleClassFieldDesc;
+    val pcf_loc_ = ReLocation.handleLocation(pcf_loc);
+    val pcf_attributes_ =
+      pcf_attributes |> List.map(handleAttribute) |> Array.of_list |> Js.array
+  }
+]
+and handleClassFieldDesc = cfd =>
+  switch (cfd) {
+  | Pcf_inherit(_overrideFlag, _classExpr, _maybeStringLoc) =>
+    "TODO: Pcf_inherit" |> Js.string
+  | Pcf_val((_labelLoc, _mutableFlag, _classFieldKind)) =>
+    "TODO: Pcf_val" |> Js.string
+  | Pcf_method((_labelLoc, _privateFlag, _classFieldKind)) =>
+    "TODO: Pcf_method" |> Js.string
+  | Pcf_constraint((_coreType1, _coreType2)) =>
+    "TODO: Pcf_constraint" |> Js.string
+  | Pcf_initializer(_expression) => "TODO: Pcf_initializer" |> Js.string
+  | Pcf_attribute(_attribute) => "TODO: Pcf_attribute" |> Js.string
+  | Pcf_extension(_extension) => "TODO: Pcf_extension" |> Js.string
+  }
+and handleClassFieldKind = cfk =>
+  switch (cfk) {
+  | Cfk_virtual(_core_type) => "TODO: fk_virtual" |> Js.string
+  | Cfk_concrete(_overrideFlag, _expression) => "TODO: fk_concrete" |> Js.string
+  }
+and handleExtensionConstructor =
+    ({pext_name, pext_kind, pext_loc, pext_attributes}) => [%js
+  {
+    val type_ = "extension_constructor" |> Js.string;
+    val pext_name_ = ReAsttypes.handleStringLoc(pext_name);
+    val pext_kind_ = pext_kind |> handleExtConstructorKind;
+    val pexp_loc_ = ReLocation.handleLocation(pext_loc);
+    val pext_attributes_ =
+      pext_attributes
+      |> List.map(handleAttribute)
+      |> Array.of_list
+      |> Js.array
+  }
+]
+and handleExtConstructorKind = k =>
+  switch (k) {
+  | Pext_decl(constructorArguments, maybeCoreType) =>
+    [%js
+      {
+        val type_ = "Pext_decl" |> Js.string;
+        val constructor_arguments_ =
+          constructorArguments |> handleConstructorArguments;
+        val core_type_ = maybeCoreType |> Utils.handleOption(handleCoreType)
+      }
+    ]
+    |> Js.Unsafe.coerce
+  | Pext_rebind(idLoc) =>
+    %js
+    {
+      val type_ = "Pext_rebind" |> Js.string;
+      val id_loc = ReAsttypes.handleIdLoc(idLoc)
+    }
+  }
+and handleConstructorArguments = c =>
+  switch (c) {
+  | Pcstr_tuple(coreTypes) =>
+    [%js
+      {
+        val type_ = "Pcstr_tuple" |> Js.string;
+        val core_types_ =
+          coreTypes |> List.map(handleCoreType) |> Array.of_list |> Js.array
+      }
+    ]
+    |> Js.Unsafe.coerce
+  | Pcstr_record(labelDeclarations) =>
+    %js
+    {
+      val type_ = "Pcstr_record" |> Js.string;
+      val label_declarations_ =
+        labelDeclarations
+        |> List.map(handleLabelDeclaration)
+        |> Array.of_list
+        |> Js.array
+    }
+  }
+and handleLabelDeclaration =
+    ({pld_name, pld_mutable, pld_type, pld_loc, pld_attributes}) => [%js
+  {
+    val type_ = "label_declaration" |> Js.string;
+    val pld_name_ = ReAsttypes.handleStringLoc(pld_name);
+    val pld_mutable_ = pld_mutable |> ReAsttypes.handleMutableFlag;
+    val pld_type_ = handleCoreType(pld_type);
+    val pld_loc_ = ReLocation.handleLocation(pld_loc);
+    val pld_attributes =
+      pld_attributes |> List.map(handleAttribute) |> Array.of_list |> Js.array
+  }
+]
 and handleExpression = ({pexp_desc, pexp_loc, pexp_attributes}) => [%js
   {
     val type_ = "expression" |> Js.string;

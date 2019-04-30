@@ -10,10 +10,28 @@ let recFlag = r =>
     {val type_ = "Recursive" |> Js.string}
   };
 
+let handleDirectionFlag = f =>
+  switch (f) {
+  | Upto => "Upto" |> Js.string
+  | Downto => "Downto" |> Js.string
+  };
+
+let handleMutableFlag = f =>
+  switch (f) {
+  | Immutable => "Immutable" |> Js.string
+  | Mutable => "Mutable" |> Js.string
+  };
+
+let handleOverrideFlag = f =>
+  switch (f) {
+  | Override => "Override" |> Js.string
+  | Fresh => "Fresh" |> Js.string
+  };
+
 let handleClosedFlag = f =>
   switch (f) {
-  | Closed => "Closed"
-  | Open => "Open"
+  | Closed => "Closed" |> Js.string
+  | Open => "Open" |> Js.string
   };
 
 let handleArgLabel = argLabel =>
