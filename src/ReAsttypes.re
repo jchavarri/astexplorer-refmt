@@ -1,6 +1,6 @@
 open Ast_404.Asttypes;
 
-let recFlag = r =>
+let handleRecFlag = r =>
   switch (r) {
   | Nonrecursive =>
     %js
@@ -14,6 +14,12 @@ let handleDirectionFlag = f =>
   switch (f) {
   | Upto => "Upto" |> Js.string
   | Downto => "Downto" |> Js.string
+  };
+
+let handlePrivateFlag = f =>
+  switch (f) {
+  | Private => "Private" |> Js.string
+  | Public => "Public" |> Js.string
   };
 
 let handleMutableFlag = f =>
@@ -62,3 +68,10 @@ let handleIdLoc = ({txt, loc}) => [%js
     val loc = ReLocation.handleLocation(loc)
   }
 ];
+
+let handleVariance = v =>
+  switch (v) {
+  | Covariant => "Covariant" |> Js.string
+  | Contravariant => "Contravariant" |> Js.string
+  | Invariant => "Invariant" |> Js.string
+  };
