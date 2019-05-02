@@ -28,6 +28,12 @@ let handleMutableFlag = f =>
   | Mutable => "Mutable" |> Js.string
   };
 
+let handleVirtualFlag = f =>
+  switch (f) {
+  | Virtual => "Virtual" |> Js.string
+  | Concrete => "Concrete" |> Js.string
+  };
+
 let handleOverrideFlag = f =>
   switch (f) {
   | Override => "Override" |> Js.string

@@ -210,12 +210,48 @@ and handleSignatureItemDesc = desc =>
       }
     ]
     |> Js.Unsafe.coerce
-  | Psig_class(_classDescriptions) => "TODO: Psig_class" |> Js.string
-  | Psig_class_type(_classTypeDeclarations) =>
-    "TODO: Psig_class_type" |> Js.string
-  | Psig_attribute(_attribute) => "TODO: Psig_attribute" |> Js.string
-  | Psig_extension(_extension, _attributes) =>
-    "TODO: Psig_extension" |> Js.string
+  | Psig_class(classDescriptions) =>
+    [%js
+      {
+        val type_ = "Psig_class" |> Js.string;
+        val class_descriptions_ =
+          classDescriptions
+          |> List.map(handleClassDescription)
+          |> Array.of_list
+          |> Js.array
+      }
+    ]
+    |> Js.Unsafe.coerce
+  | Psig_class_type(classTypeDeclarations) =>
+    [%js
+      {
+        val type_ = "Psig_class_type" |> Js.string;
+        val class_type_declarations_ =
+          classTypeDeclarations
+          |> List.map(handleClassTypeDeclaration)
+          |> Array.of_list
+          |> Js.array
+      }
+    ]
+    |> Js.Unsafe.coerce
+  | Psig_attribute(attribute) =>
+    [%js
+      {
+        val type_ = "Psig_attribute" |> Js.string;
+        val attribute = attribute |> handleAttribute
+      }
+    ]
+    |> Js.Unsafe.coerce
+  | Psig_extension(extension, attributes) =>
+    [%js
+      {
+        val type_ = "Psig_extension" |> Js.string;
+        val extension = extension |> handleExtension;
+        val attributes =
+          attributes |> List.map(handleAttribute) |> Array.of_list |> Js.array
+      }
+    ]
+    |> Js.Unsafe.coerce
   }
 and handleModuleDeclaration = ({pmd_name, pmd_type, pmd_attributes, pmd_loc}) => [%js
   {
@@ -305,7 +341,7 @@ and handleModuleExprDesc = moduleExpr =>
     [%js
       {
         val type_ = "Pmod_structure" |> Js.string;
-        val id_loc_ = structure |> handleStructure
+        val structure = structure |> handleStructure
       }
     ]
     |> Js.Unsafe.coerce
@@ -427,11 +463,35 @@ and handleTypeDeclaration =
 ]
 and handleTypeKind = kind =>
   switch (kind) {
-  | Ptype_abstract => "TODO: Ptype_abstract" |> Js.string
-  | Ptype_variant(_constructorDeclarations) =>
-    "TODO: Ptype_variant" |> Js.string
-  | Ptype_record(_labelDeclarations) => "TODO: Ptype_record" |> Js.string
-  | Ptype_open => "TODO: Ptype_open" |> Js.string
+  | Ptype_abstract =>
+    [%js {val type_ = "Ptype_abstract" |> Js.string}] |> Js.Unsafe.coerce
+  | Ptype_variant(constructorDeclarations) =>
+    [%js
+      {
+        val type_ = "Ptype_variant" |> Js.string;
+        val constructor_declarations_ =
+          constructorDeclarations
+          |> List.map(handleConstructorDeclaration)
+          |> Array.of_list
+          |> Js.array
+      }
+    ]
+    |> Js.Unsafe.coerce
+  | Ptype_record(labelDeclarations) =>
+    [%js
+      {
+        val type_ = "Ptype_record" |> Js.string;
+        val label_declarations_ =
+          labelDeclarations
+          |> List.map(handleLabelDeclaration)
+          |> Array.of_list
+          |> Js.array
+      }
+    ]
+    |> Js.Unsafe.coerce
+  | Ptype_open =>
+    %js
+    {val type_ = "Ptype_open" |> Js.string}
   }
 and handlePattern = ({ppat_desc, ppat_loc, ppat_attributes}) => [%js
   {
@@ -523,7 +583,7 @@ and handlePatternDesc = patternDesc => {
              )
           |> Array.of_list
           |> Js.array;
-        val closed_flag = ReAsttypes.handleClosedFlag(closedFlag)
+        val closed_flag_ = ReAsttypes.handleClosedFlag(closedFlag)
       }
     ]
     |> Js.Unsafe.coerce
@@ -974,6 +1034,161 @@ and handleExpressionDesc = exprDesc =>
     %js
     {val type_ = "Pexp_unreachable" |> Js.string}
   }
+and handleClassType = ({pcty_desc, pcty_loc, pcty_attributes}) => [%js
+  {
+    val type_ = "class_type" |> Js.string;
+    val pcty_desc_ = pcty_desc |> handleClassTypeDesc;
+    val pcty_loc_ = pcty_loc |> ReLocation.handleLocation;
+    val pcty_attributes_ =
+      pcty_attributes
+      |> List.map(handleAttribute)
+      |> Array.of_list
+      |> Js.array
+  }
+]
+and handleClassTypeDesc = classTypeDesc =>
+  switch (classTypeDesc) {
+  | Pcty_constr(idLoc, coreTypes) =>
+    [%js
+      {
+        val type_ = "Pcty_constr" |> Js.string;
+        val id_loc_ = idLoc |> ReAsttypes.handleIdLoc;
+        val core_types_ =
+          coreTypes |> List.map(handleCoreType) |> Array.of_list |> Js.array
+      }
+    ]
+    |> Js.Unsafe.coerce
+  | Pcty_signature(classSignature) =>
+    [%js
+      {
+        val type_ = "Pcty_signature" |> Js.string;
+        val class_signature = classSignature |> handleClassSignature
+      }
+    ]
+    |> Js.Unsafe.coerce
+  | Pcty_arrow(argLabel, coreType, classType) =>
+    [%js
+      {
+        val type_ = "Pcty_arrow" |> Js.string;
+        val arg_label_ = ReAsttypes.handleArgLabel(argLabel);
+        val core_type_ = coreType |> handleCoreType;
+        val class_type_ = classType |> handleClassType
+      }
+    ]
+    |> Js.Unsafe.coerce
+  | Pcty_extension(extension) =>
+    %js
+    {
+      val type_ = "Pcty_extension" |> Js.string;
+      val extension = extension |> handleExtension
+    }
+  }
+and handleClassSignature = ({pcsig_self, pcsig_fields}) => [%js
+  {
+    val type_ = "class_signature" |> Js.string;
+    val pcsig_self_ = pcsig_self |> handleCoreType;
+    val pcsig_fields_ =
+      pcsig_fields
+      |> List.map(handleClassTypeField)
+      |> Array.of_list
+      |> Js.array
+  }
+]
+and handleClassTypeField = ({pctf_desc, pctf_loc, pctf_attributes}) => [%js
+  {
+    val type_ = "class_type_field" |> Js.string;
+    val pctf_desc_ = pctf_desc |> handleClassTypeFieldDesc;
+    val pctf_loc_ = pctf_loc |> ReLocation.handleLocation;
+    val pctf_attributes_ =
+      pctf_attributes
+      |> List.map(handleAttribute)
+      |> Array.of_list
+      |> Js.array
+  }
+]
+and handleClassTypeFieldDesc = classTypeFieldDesc =>
+  switch (classTypeFieldDesc) {
+  | Pctf_inherit(classType) =>
+    [%js
+      {
+        val type_ = "Pctf_inherit" |> Js.string;
+        val class_type_ = classType |> handleClassType
+      }
+    ]
+    |> Js.Unsafe.coerce
+  | Pctf_val((labelLoc, mutableFlag, virtualFlag, coreType)) =>
+    [%js
+      {
+        val type_ = "Pctf_val" |> Js.string;
+        val label_loc_ = labelLoc |> Js.string;
+        val mutable_flag_ = mutableFlag |> ReAsttypes.handleMutableFlag;
+        val virtual_flag_ = virtualFlag |> ReAsttypes.handleVirtualFlag;
+        val core_type_ = coreType |> handleCoreType
+      }
+    ]
+    |> Js.Unsafe.coerce
+  | Pctf_method((labelLoc, privateFlag, virtualFlag, coreType)) =>
+    [%js
+      {
+        val type_ = "Pctf_method" |> Js.string;
+        val label_loc_ = labelLoc |> Js.string;
+        val private_flag_ = privateFlag |> ReAsttypes.handlePrivateFlag;
+        val virtual_flag_ = virtualFlag |> ReAsttypes.handleVirtualFlag;
+        val core_type_ = coreType |> handleCoreType
+      }
+    ]
+    |> Js.Unsafe.coerce
+  | Pctf_constraint((coreType1, coreType2)) =>
+    [%js
+      {
+        val type_ = "Pctf_constraint" |> Js.string;
+        val core_type_1_ = coreType1 |> handleCoreType;
+        val core_type_2_ = coreType2 |> handleCoreType
+      }
+    ]
+    |> Js.Unsafe.coerce
+  | Pctf_attribute(attribute) =>
+    [%js
+      {
+        val type_ = "Pctf_attribute" |> Js.string;
+        val attribute = attribute |> handleAttribute
+      }
+    ]
+    |> Js.Unsafe.coerce
+  | Pctf_extension(extension) =>
+    %js
+    {
+      val type_ = "Pctf_extension" |> Js.string;
+      val extension = extension |> handleExtension
+    }
+  }
+and handleClassInfosClassType =
+    (
+      type_,
+      {pci_virt, pci_params, pci_name, pci_expr, pci_loc, pci_attributes},
+    ) => [%js
+  {
+    val type_ = type_ |> Js.string;
+    val pci_virt_ = pci_virt |> ReAsttypes.handleVirtualFlag;
+    val pci_params_ =
+      pci_params
+      |> List.map(((coreType, variance)) =>
+           (handleCoreType(coreType), ReAsttypes.handleVariance(variance))
+           |> Utils.unsafeFromTuple
+         )
+      |> Array.of_list
+      |> Js.array;
+    val pci_name_ = pci_name |> ReAsttypes.handleStringLoc;
+    val pci_expr_ = pci_expr |> handleClassType;
+    val pci_loc_ = pci_loc |> ReLocation.handleLocation;
+    val pci_attributes_ =
+      pci_attributes |> List.map(handleAttribute) |> Array.of_list |> Js.array
+  }
+]
+and handleClassDescription = classDesc =>
+  handleClassInfosClassType("class_description", classDesc)
+and handleClassTypeDeclaration = classDesc =>
+  handleClassInfosClassType("class_type_declaration", classDesc)
 and handleClassStructure = ({pcstr_self, pcstr_fields}) => [%js
   {
     val type_ = "class_structure" |> Js.string;
@@ -982,6 +1197,93 @@ and handleClassStructure = ({pcstr_self, pcstr_fields}) => [%js
       pcstr_fields |> List.map(handleClassField) |> Array.of_list |> Js.array
   }
 ]
+and handleClassExpr = ({pcl_desc, pcl_loc, pcl_attributes}) => [%js
+  {
+    val type_ = "class_expr" |> Js.string;
+    val pcl_desc_ = pcl_desc |> handleClassExprDesc;
+    val pcl_loc_ = pcl_loc |> ReLocation.handleLocation;
+    val pcl_attributes_ =
+      pcl_attributes |> List.map(handleAttribute) |> Array.of_list |> Js.array
+  }
+]
+and handleClassExprDesc = classExprDesc =>
+  switch (classExprDesc) {
+  | Pcl_constr(idLoc, coreTypes) =>
+    [%js
+      {
+        val type_ = "Pcl_constr" |> Js.string;
+        val id_loc_ = idLoc |> ReAsttypes.handleIdLoc;
+        val core_types_ =
+          coreTypes |> List.map(handleCoreType) |> Array.of_list |> Js.array
+      }
+    ]
+    |> Js.Unsafe.coerce
+  | Pcl_structure(classStructure) =>
+    [%js
+      {
+        val type_ = "Pcl_structure" |> Js.string;
+        val class_structure_ = classStructure |> handleClassStructure
+      }
+    ]
+    |> Js.Unsafe.coerce
+  | Pcl_fun(argLabel, argExpression, pattern, classExpr) =>
+    [%js
+      {
+        val type_ = "Pcl_fun" |> Js.string;
+        val arg_label_ = argLabel |> ReAsttypes.handleArgLabel;
+        val arg_expression_ =
+          argExpression |> Utils.handleOption(handleExpression);
+        val pattern = handlePattern(pattern);
+        val class_expr_ = classExpr |> handleClassExpr
+      }
+    ]
+    |> Js.Unsafe.coerce
+  | Pcl_apply(classExpr, args) =>
+    [%js
+      {
+        val type_ = "Pcl_apply" |> Js.string;
+        val class_expr_ = classExpr |> handleClassExpr;
+        val args =
+          args
+          |> List.map(((label, argExpr)) =>
+               (ReAsttypes.handleArgLabel(label), handleExpression(argExpr))
+               |> Utils.unsafeFromTuple
+             )
+          |> Array.of_list
+          |> Js.array
+      }
+    ]
+    |> Js.Unsafe.coerce
+  | Pcl_let(recFlag, valueBindings, classExpr) =>
+    [%js
+      {
+        val type_ = "Pcl_let" |> Js.string;
+        val rec_flag_ = recFlag |> ReAsttypes.handleRecFlag;
+        val value_bindings_ =
+          valueBindings
+          |> List.map(handleValueBinding)
+          |> Array.of_list
+          |> Js.array;
+        val class_expr_ = classExpr |> handleClassExpr
+      }
+    ]
+    |> Js.Unsafe.coerce
+  | Pcl_constraint(classExpr, classType) =>
+    [%js
+      {
+        val type_ = "Pcl_constraint" |> Js.string;
+        val class_expr_ = classExpr |> handleClassExpr;
+        val class_type_ = classType |> handleClassType
+      }
+    ]
+    |> Js.Unsafe.coerce
+  | Pcl_extension(extension) =>
+    %js
+    {
+      val type_ = "Pcl_extension" |> Js.string;
+      val extension = extension |> handleExtension
+    }
+  }
 and handleClassField = ({pcf_desc, pcf_loc, pcf_attributes}) => [%js
   {
     val type_ = "class_field" |> Js.string;
@@ -993,23 +1295,87 @@ and handleClassField = ({pcf_desc, pcf_loc, pcf_attributes}) => [%js
 ]
 and handleClassFieldDesc = cfd =>
   switch (cfd) {
-  | Pcf_inherit(_overrideFlag, _classExpr, _maybeStringLoc) =>
-    "TODO: Pcf_inherit" |> Js.string
-  | Pcf_val((_labelLoc, _mutableFlag, _classFieldKind)) =>
-    "TODO: Pcf_val" |> Js.string
-  | Pcf_method((_labelLoc, _privateFlag, _classFieldKind)) =>
-    "TODO: Pcf_method" |> Js.string
-  | Pcf_constraint((_coreType1, _coreType2)) =>
-    "TODO: Pcf_constraint" |> Js.string
-  | Pcf_initializer(_expression) => "TODO: Pcf_initializer" |> Js.string
-  | Pcf_attribute(_attribute) => "TODO: Pcf_attribute" |> Js.string
-  | Pcf_extension(_extension) => "TODO: Pcf_extension" |> Js.string
+  | Pcf_inherit(overrideFlag, classExpr, maybeStringLoc) =>
+    [%js
+      {
+        val type_ = "Pcf_inherit" |> Js.string;
+        val override_flag_ = overrideFlag |> ReAsttypes.handleOverrideFlag;
+        val class_expr_ = classExpr |> handleClassExpr;
+        val string_loc_ = maybeStringLoc |> Utils.handleOption(Js.string)
+      }
+    ]
+    |> Js.Unsafe.coerce
+  | Pcf_val((labelLoc, mutableFlag, classFieldKind)) =>
+    [%js
+      {
+        val type_ = "Pcf_val" |> Js.string;
+        val label_loc_ = labelLoc |> ReAsttypes.handleStringLoc;
+        val mutable_flag_ = mutableFlag |> ReAsttypes.handleMutableFlag;
+        val class_field_kind_ = classFieldKind |> handleClassFieldKind
+      }
+    ]
+    |> Js.Unsafe.coerce
+  | Pcf_method((labelLoc, privateFlag, classFieldKind)) =>
+    [%js
+      {
+        val type_ = "Pcf_method" |> Js.string;
+        val label_loc_ = labelLoc |> ReAsttypes.handleStringLoc;
+        val private_flag_ = privateFlag |> ReAsttypes.handlePrivateFlag;
+        val class_field_kind_ = classFieldKind |> handleClassFieldKind
+      }
+    ]
+    |> Js.Unsafe.coerce
+  | Pcf_constraint((coreType1, coreType2)) =>
+    [%js
+      {
+        val type_ = "Pcf_constraint" |> Js.string;
+        val core_type_1_ = coreType1 |> handleCoreType;
+        val core_type_2_ = coreType2 |> handleCoreType
+      }
+    ]
+    |> Js.Unsafe.coerce
+  | Pcf_initializer(expression) =>
+    [%js
+      {
+        val type_ = "Pcf_initializer" |> Js.string;
+        val expression = expression |> handleExpression
+      }
+    ]
+    |> Js.Unsafe.coerce
+  | Pcf_attribute(attribute) =>
+    [%js
+      {
+        val type_ = "Pcf_attribute" |> Js.string;
+        val attribute = attribute |> handleAttribute
+      }
+    ]
+    |> Js.Unsafe.coerce
+  | Pcf_extension(extension) =>
+    %js
+    {
+      val type_ = "Pcf_extension" |> Js.string;
+      val extension = extension |> handleExtension
+    }
   }
 and handleClassFieldKind = cfk =>
   switch (cfk) {
-  | Cfk_virtual(_core_type) => "TODO: fk_virtual" |> Js.string
-  | Cfk_concrete(_overrideFlag, _expression) =>
-    "TODO: fk_concrete" |> Js.string
+  | Cfk_virtual(coreType) =>
+    [%js
+      {
+        val type_ = "Cfk_virtual" |> Js.string;
+        val core_type_ = coreType |> handleCoreType
+      }
+    ]
+    |> Js.Unsafe.coerce
+  | Cfk_concrete(overrideFlag, expression) =>
+    [%js
+      {
+        val type_ = "Cfk_concrete" |> Js.string;
+        val override_flag_ = overrideFlag |> ReAsttypes.handleOverrideFlag;
+        val expression = expression |> handleExpression
+      }
+    ]
+    |> Js.Unsafe.coerce
   }
 and handleExtensionConstructor =
     ({pext_name, pext_kind, pext_loc, pext_attributes}) => [%js
@@ -1042,28 +1408,6 @@ and handleExtConstructorKind = k =>
     {
       val type_ = "Pext_rebind" |> Js.string;
       val id_loc = ReAsttypes.handleIdLoc(idLoc)
-    }
-  }
-and handleConstructorArguments = c =>
-  switch (c) {
-  | Pcstr_tuple(coreTypes) =>
-    [%js
-      {
-        val type_ = "Pcstr_tuple" |> Js.string;
-        val core_types_ =
-          coreTypes |> List.map(handleCoreType) |> Array.of_list |> Js.array
-      }
-    ]
-    |> Js.Unsafe.coerce
-  | Pcstr_record(labelDeclarations) =>
-    %js
-    {
-      val type_ = "Pcstr_record" |> Js.string;
-      val label_declarations_ =
-        labelDeclarations
-        |> List.map(handleLabelDeclaration)
-        |> Array.of_list
-        |> Js.array
     }
   }
 and handleTypeExtension =
@@ -1112,6 +1456,40 @@ and handleLabelDeclaration =
       pld_attributes |> List.map(handleAttribute) |> Array.of_list |> Js.array
   }
 ]
+and handleConstructorDeclaration =
+    ({pcd_name, pcd_args, pcd_res, pcd_loc, pcd_attributes}) => [%js
+  {
+    val type_ = "constructor_declaration" |> Js.string;
+    val pcd_name_ = ReAsttypes.handleStringLoc(pcd_name);
+    val pcd_args_ = pcd_args |> handleConstructorArguments;
+    val pcd_res_ = pcd_res |> Utils.handleOption(handleCoreType);
+    val pcd_loc_ = ReLocation.handleLocation(pcd_loc);
+    val pcd_attributes_ =
+      pcd_attributes |> List.map(handleAttribute) |> Array.of_list |> Js.array
+  }
+]
+and handleConstructorArguments = c =>
+  switch (c) {
+  | Pcstr_tuple(coreTypes) =>
+    [%js
+      {
+        val type_ = "Pcstr_tuple" |> Js.string;
+        val core_types_ =
+          coreTypes |> List.map(handleCoreType) |> Array.of_list |> Js.array
+      }
+    ]
+    |> Js.Unsafe.coerce
+  | Pcstr_record(labelDeclarations) =>
+    %js
+    {
+      val type_ = "Pcstr_record" |> Js.string;
+      val label_declarations_ =
+        labelDeclarations
+        |> List.map(handleLabelDeclaration)
+        |> Array.of_list
+        |> Js.array
+    }
+  }
 and handleExpression = ({pexp_desc, pexp_loc, pexp_attributes}) => [%js
   {
     val type_ = "expression" |> Js.string;
@@ -1132,10 +1510,41 @@ and handleAttribute = ((loc, payload)) =>
 and handleExtension = e => handleAttribute(e)
 and handlePayload = payload =>
   switch (payload) {
-  | PStr(_structure) => "PStr" |> Js.string
-  | PSig(_signature) => "PSig" |> Js.string
-  | PTyp(_core_type) => "PTyp" |> Js.string
-  | PPat(_pattern, _maybeExpression) => "PPat" |> Js.string
+  | PStr(structure) =>
+    [%js
+      {
+        val type_ = "PStr" |> Js.string;
+        val structure = structure |> handleStructure
+      }
+    ]
+    |> Js.Unsafe.coerce
+  | PSig(signature) =>
+    [%js
+      {
+        val type_ = "PSig" |> Js.string;
+        val signature =
+          signature
+          |> List.map(handleSignatureItem)
+          |> Array.of_list
+          |> Js.array
+      }
+    ]
+    |> Js.Unsafe.coerce
+  | PTyp(coreType) =>
+    [%js
+      {
+        val type_ = "PTyp" |> Js.string;
+        val core_type_ = coreType |> handleCoreType
+      }
+    ]
+    |> Js.Unsafe.coerce
+  | PPat(pattern, maybeExpression) =>
+    %js
+    {
+      val type_ = "PPat" |> Js.string;
+      val pattern = pattern |> handlePattern;
+      val expression = maybeExpression |> Utils.handleOption(handleExpression)
+    }
   }
 and handleConstant = constant =>
   switch (constant) {
@@ -1186,6 +1595,16 @@ and handleValueBinding = ({pvb_pat, pvb_expr, pvb_attributes, pvb_loc}) => [%js
     val pvb_loc_ = ReLocation.handleLocation(pvb_loc)
   }
 ]
+and handleModuleBinding = ({pmb_name, pmb_expr, pmb_attributes, pmb_loc}) => [%js
+  {
+    val type_ = "module_binding" |> Js.string;
+    val pmb_name_ = pmb_name |> ReAsttypes.handleStringLoc;
+    val pmb_expr_ = pmb_expr |> handleModuleExpr;
+    val pmb_attributes_ =
+      pmb_attributes |> List.map(handleAttribute) |> Array.of_list |> Js.array;
+    val pmb_loc_ = pmb_loc |> ReLocation.handleLocation
+  }
+]
 and handleCoreType = ({ptyp_desc, ptyp_loc, ptyp_attributes}) => [%js
   {
     val type_ = "core_type" |> Js.string;
@@ -1200,21 +1619,137 @@ and handleCoreType = ({ptyp_desc, ptyp_loc, ptyp_attributes}) => [%js
 ]
 and handleCoreTypeDesc = coreTypeDesc =>
   switch (coreTypeDesc) {
-  | Ptyp_any => "TODO: Ptyp_any" |> Js.string
-  | Ptyp_var(_string) => "TODO: Ptyp_var" |> Js.string
-  | Ptyp_arrow(_label, _coreTypeA, _coreTypeB) =>
-    "TODO: Ptyp_arrow" |> Js.string
-  | Ptyp_tuple(_coreTypes) => "TODO: Ptyp_tuple" |> Js.string
-  | Ptyp_constr(_idLoc, _coreTypes) => "TODO: Ptyp_constr" |> Js.string
-  | Ptyp_object(_objectFields, _closedFlag) =>
-    "TODO: Ptyp_object" |> Js.string
-  | Ptyp_class(_idLoc, _coreTypes) => "TODO: Ptyp_class" |> Js.string
-  | Ptyp_alias(_coreType, _string) => "TODO: Ptyp_alias" |> Js.string
-  | Ptyp_variant(_rowFields, _closedFlag, _maybeLabels) =>
-    "TODO: Ptyp_variant" |> Js.string
-  | Ptyp_poly(_strLocs, _coreType) => "TODO: Ptyp_poly" |> Js.string
-  | Ptyp_package(_packageType) => "TODO: Ptyp_package" |> Js.string
-  | Ptyp_extension(_extension) => "TODO: Ptyp_extension" |> Js.string
+  | Ptyp_any => [%js {val type_ = "Ptyp_any" |> Js.string}] |> Js.Unsafe.coerce
+  | Ptyp_var(ident) =>
+    [%js {val type_ = "Ptyp_var" |> Js.string; val ident = ident |> Js.string}]
+    |> Js.Unsafe.coerce
+  | Ptyp_arrow(argLabel, coreType1, coreType2) =>
+    [%js
+      {
+        val type_ = "Ptyp_arrow" |> Js.string;
+        val arg_label_ = argLabel |> ReAsttypes.handleArgLabel;
+        val core_type_1_ = coreType1 |> handleCoreType;
+        val core_type_2_ = coreType2 |> handleCoreType
+      }
+    ]
+    |> Js.Unsafe.coerce
+  | Ptyp_tuple(coreTypes) =>
+    [%js
+      {
+        val type_ = "Ptyp_tuple" |> Js.string;
+        val core_types_ =
+          coreTypes |> List.map(handleCoreType) |> Array.of_list |> Js.array
+      }
+    ]
+    |> Js.Unsafe.coerce
+  | Ptyp_constr(idLoc, coreTypes) =>
+    [%js
+      {
+        val type_ = "Ptyp_constr" |> Js.string;
+        val id_loc_ = idLoc |> ReAsttypes.handleIdLoc;
+        val core_types_ =
+          coreTypes |> List.map(handleCoreType) |> Array.of_list |> Js.array
+      }
+    ]
+    |> Js.Unsafe.coerce
+  | Ptyp_object(objectFields, closedFlag) =>
+    [%js
+      {
+        val type_ = "Ptyp_object" |> Js.string;
+        val object_fields_ =
+          objectFields
+          |> List.map(((label, attributes, coreType)) =>
+               (
+                 label |> Js.string,
+                 attributes
+                 |> List.map(handleAttribute)
+                 |> Array.of_list
+                 |> Js.array,
+                 handleCoreType(coreType),
+               )
+               |> Utils.unsafeFromTuple
+             )
+          |> Array.of_list
+          |> Js.array;
+        val closed_flag_ = closedFlag |> ReAsttypes.handleClosedFlag
+      }
+    ]
+    |> Js.Unsafe.coerce
+  | Ptyp_class(idLoc, coreTypes) =>
+    [%js
+      {
+        val type_ = "Ptyp_class" |> Js.string;
+        val id_loc_ = idLoc |> ReAsttypes.handleIdLoc;
+        val core_types_ =
+          coreTypes |> List.map(handleCoreType) |> Array.of_list |> Js.array
+      }
+    ]
+    |> Js.Unsafe.coerce
+  | Ptyp_alias(coreType, ident) =>
+    [%js
+      {
+        val type_ = "Ptyp_alias" |> Js.string;
+        val core_type_ = coreType |> handleCoreType;
+        val ident = ident |> Js.string
+      }
+    ]
+    |> Js.Unsafe.coerce
+  | Ptyp_variant(rowFields, closedFlag, maybeLabels) =>
+    [%js
+      {
+        val type_ = "Ptyp_variant" |> Js.string;
+        val row_fields_ =
+          rowFields |> List.map(handleRowField) |> Array.of_list |> Js.array;
+        val closed_flag_ = ReAsttypes.handleClosedFlag(closedFlag);
+        val labels =
+          maybeLabels
+          |> Utils.handleOption(labels =>
+               labels |> List.map(Js.string) |> Array.of_list |> Js.array
+             )
+      }
+    ]
+    |> Js.Unsafe.coerce
+  | Ptyp_poly(strLocs, coreType) =>
+    [%js
+      {
+        val type_ = "Ptyp_poly" |> Js.string;
+        val str_locs_ =
+          strLocs |> List.map(Js.string) |> Array.of_list |> Js.array;
+        val core_type_ = coreType |> handleCoreType
+      }
+    ]
+    |> Js.Unsafe.coerce
+  | Ptyp_package((idLoc, coreTypes)) =>
+    [%js
+      {
+        val type_ = "Ptyp_package" |> Js.string;
+        val package_type_ =
+          (
+            idLoc |> ReAsttypes.handleIdLoc,
+            coreTypes
+            |> List.map(((idLoc, coreType)) =>
+                 (idLoc |> ReAsttypes.handleIdLoc, coreType |> handleCoreType)
+                 |> Utils.unsafeFromTuple
+               )
+            |> Array.of_list
+            |> Js.array,
+          )
+          |> Utils.unsafeFromTuple
+      }
+    ]
+    |> Js.Unsafe.coerce
+  | Ptyp_extension(extension) =>
+    %js
+    {
+      val type_ = "Ptyp_extension" |> Js.string;
+      val extension = extension |> handleExtension
+    }
+  }
+and handleRowField = rowField =>
+  switch (rowField) {
+  | Rtag(_stringLoc, _attributes, _bool, _coreTypes) =>
+    "TODO: Rtag" |> Js.string
+  | Rinherit(_coreType) => "TODO: Rinherit" |> Js.string
   }
 and handleStrItemDesc = strItemDesc =>
   switch (strItemDesc) {
@@ -1246,9 +1781,14 @@ and handleStrItemDesc = strItemDesc =>
   | Pstr_exception(_extensionConstructor) =>
     %js
     {val type_ = "TODO: Pstr_exception" |> Js.string}
-  | Pstr_module(_moduleBindings) =>
-    %js
-    {val type_ = "TODO: Pstr_module" |> Js.string}
+  | Pstr_module(moduleBinding) =>
+    [%js
+      {
+        val type_ = "Pstr_module" |> Js.string;
+        val module_binding_ = moduleBinding |> handleModuleBinding
+      }
+    ]
+    |> Js.Unsafe.coerce
   | Pstr_recmodule(_moduleBindings) =>
     %js
     {val type_ = "TODO: Pstr_recmodule" |> Js.string}
