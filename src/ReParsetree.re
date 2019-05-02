@@ -1407,7 +1407,7 @@ and handleExtConstructorKind = k =>
     %js
     {
       val type_ = "Pext_rebind" |> Js.string;
-      val id_loc = ReAsttypes.handleIdLoc(idLoc)
+      val id_loc_ = ReAsttypes.handleIdLoc(idLoc)
     }
   }
 and handleTypeExtension =
@@ -1452,7 +1452,7 @@ and handleLabelDeclaration =
     val pld_mutable_ = pld_mutable |> ReAsttypes.handleMutableFlag;
     val pld_type_ = handleCoreType(pld_type);
     val pld_loc_ = ReLocation.handleLocation(pld_loc);
-    val pld_attributes =
+    val pld_attributes_ =
       pld_attributes |> List.map(handleAttribute) |> Array.of_list |> Js.array
   }
 ]

@@ -96,9 +96,8 @@ let parseWith = (f, code) => {
   };
 };
 
-let parse = code => {
-  let (structure, _comments) =
-    code |> parseWith(Reason_toolchain.RE.implementation_with_comments);
+let parse = (implementation, code) => {
+  let (structure, _comments) = code |> parseWith(implementation);
   %js
   {
     val type_ = "structure" |> Js.string;
@@ -106,6 +105,19 @@ let parse = code => {
   };
 };
 
-log("parse", parse("let f = a => \"1\"; /* Bla */ let a = f(2);"));
+let parseReason = code => {
+  parse(Reason_toolchain.RE.implementation_with_comments, code);
+};
 
-Js.export_all([%js {val parse = a => a |> Js.to_string |> parse}]);
+let parseOcaml = code => {
+  parse(Reason_toolchain.ML.implementation_with_comments, code);
+};
+
+Js.export_all(
+  [%js
+    {
+      val parseReason = a => a |> Js.to_string |> parseReason;
+      val parseOcaml = a => a |> Js.to_string |> parseOcaml
+    }
+  ],
+);
