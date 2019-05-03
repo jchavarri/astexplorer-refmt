@@ -1189,6 +1189,26 @@ and handleClassDescription = classDesc =>
   handleClassInfosClassType("class_description", classDesc)
 and handleClassTypeDeclaration = classDesc =>
   handleClassInfosClassType("class_type_declaration", classDesc)
+and handleClassDeclaration =
+    ({pci_virt, pci_params, pci_name, pci_expr, pci_loc, pci_attributes}) => [%js
+  {
+    val type_ = "class_declaration" |> Js.string;
+    val pci_virt_ = pci_virt |> ReAsttypes.handleVirtualFlag;
+    val pci_params_ =
+      pci_params
+      |> List.map(((coreType, variance)) =>
+           (handleCoreType(coreType), ReAsttypes.handleVariance(variance))
+           |> Utils.unsafeFromTuple
+         )
+      |> Array.of_list
+      |> Js.array;
+    val pci_name_ = pci_name |> ReAsttypes.handleStringLoc;
+    val pci_expr_ = pci_expr |> handleClassExpr;
+    val pci_loc_ = pci_loc |> ReLocation.handleLocation;
+    val pci_attributes_ =
+      pci_attributes |> List.map(handleAttribute) |> Array.of_list |> Js.array
+  }
+]
 and handleClassStructure = ({pcstr_self, pcstr_fields}) => [%js
   {
     val type_ = "class_structure" |> Js.string;
@@ -1747,15 +1767,38 @@ and handleCoreTypeDesc = coreTypeDesc =>
   }
 and handleRowField = rowField =>
   switch (rowField) {
-  | Rtag(_stringLoc, _attributes, _bool, _coreTypes) =>
-    "TODO: Rtag" |> Js.string
-  | Rinherit(_coreType) => "TODO: Rinherit" |> Js.string
+  | Rtag(label, attributes, bool, coreTypes) =>
+    [%js
+      {
+        val type_ = "Rtag" |> Js.string;
+        val label = label |> Js.string;
+        val attributes =
+          attributes |> List.map(handleAttribute) |> Array.of_list |> Js.array;
+        val constant_constructor_ = bool |> Js.bool;
+        val core_types_ =
+          coreTypes |> List.map(handleCoreType) |> Array.of_list |> Js.array
+      }
+    ]
+    |> Js.Unsafe.coerce
+  | Rinherit(coreType) =>
+    %js
+    {
+      val type_ = "Rinherit" |> Js.string;
+      val core_type_ = coreType |> handleCoreType
+    }
   }
 and handleStrItemDesc = strItemDesc =>
   switch (strItemDesc) {
-  | Pstr_eval(_expression, _attributes) =>
-    %js
-    {val type_ = "TODO: Pstr_eval" |> Js.string}
+  | Pstr_eval(expression, attributes) =>
+    [%js
+      {
+        val type_ = "Pstr_eval" |> Js.string;
+        val expression = expression |> handleExpression;
+        val attributes =
+          attributes |> List.map(handleAttribute) |> Array.of_list |> Js.array
+      }
+    ]
+    |> Js.Unsafe.coerce
   | Pstr_value(recFlag, valueBindings) =>
     [%js
       {
@@ -1769,18 +1812,44 @@ and handleStrItemDesc = strItemDesc =>
       }
     ]
     |> Js.Unsafe.coerce
-  | Pstr_primitive(_valueDescription) =>
-    %js
-    {val type_ = "TODO: Pstr_primitive" |> Js.string}
-  | Pstr_type(_recFlag, _typeDeclarations) =>
-    %js
-    {val type_ = "TODO: Pstr_type" |> Js.string}
-  | Pstr_typext(_typeExtension) =>
-    %js
-    {val type_ = "TODO: Pstr_typext" |> Js.string}
-  | Pstr_exception(_extensionConstructor) =>
-    %js
-    {val type_ = "TODO: Pstr_exception" |> Js.string}
+  | Pstr_primitive(valueDescription) =>
+    [%js
+      {
+        val type_ = "Pstr_primitive" |> Js.string;
+        val value_description_ = valueDescription |> handleValueDescription
+      }
+    ]
+    |> Js.Unsafe.coerce
+  | Pstr_type(recFlag, typeDeclarations) =>
+    [%js
+      {
+        val type_ = "Pstr_type" |> Js.string;
+        val rec_flag_ = recFlag |> ReAsttypes.handleRecFlag;
+        val type_declarations_ =
+          typeDeclarations
+          |> List.map(handleTypeDeclaration)
+          |> Array.of_list
+          |> Js.array
+      }
+    ]
+    |> Js.Unsafe.coerce
+  | Pstr_typext(typeExtension) =>
+    [%js
+      {
+        val type_ = "Pstr_typext" |> Js.string;
+        val type_extension_ = typeExtension |> handleTypeExtension
+      }
+    ]
+    |> Js.Unsafe.coerce
+  | Pstr_exception(extensionConstructor) =>
+    [%js
+      {
+        val type_ = "Pstr_exception" |> Js.string;
+        val extension_constructor_ =
+          extensionConstructor |> handleExtensionConstructor
+      }
+    ]
+    |> Js.Unsafe.coerce
   | Pstr_module(moduleBinding) =>
     [%js
       {
@@ -1789,21 +1858,35 @@ and handleStrItemDesc = strItemDesc =>
       }
     ]
     |> Js.Unsafe.coerce
-  | Pstr_recmodule(_moduleBindings) =>
-    %js
-    {val type_ = "TODO: Pstr_recmodule" |> Js.string}
-  | Pstr_modtype(_module_type_declaration) =>
-    %js
-    {val type_ = "TODO: Pstr_modtype" |> Js.string}
-  | Pstr_open(_open_description) =>
-    %js
-    {val type_ = "TODO: Pstr_open" |> Js.string}
-  | Pstr_class(_classDeclarations) =>
-    %js
-    {val type_ = "TODO: Pstr_class" |> Js.string}
-  | Pstr_class_type(_classTypeDeclarations) =>
-    %js
-    {val type_ = "TODO: Pstr_class_type" |> Js.string}
+  | Pstr_recmodule(moduleBindings) =>
+    [%js
+      {
+        val type_ = "Pstr_recmodule" |> Js.string;
+        val module_bindings_ =
+          moduleBindings
+          |> List.map(handleModuleBinding)
+          |> Array.of_list
+          |> Js.array
+      }
+    ]
+    |> Js.Unsafe.coerce
+  | Pstr_modtype(moduleTypeDeclaration) =>
+    [%js
+      {
+        val type_ = "Pstr_modtype" |> Js.string;
+        val module_type_declaration_ =
+          moduleTypeDeclaration |> handleModuleTypeDeclaration
+      }
+    ]
+    |> Js.Unsafe.coerce
+  | Pstr_open(openDescription) =>
+    [%js
+      {
+        val type_ = "Pstr_open" |> Js.string;
+        val open_description_ = openDescription |> handleOpenDescription
+      }
+    ]
+    |> Js.Unsafe.coerce
   | Pstr_include(includeDeclaration) =>
     [%js
       {
@@ -1813,12 +1896,46 @@ and handleStrItemDesc = strItemDesc =>
       }
     ]
     |> Js.Unsafe.coerce
-  | Pstr_attribute(_attribute) =>
+  | Pstr_class(classDeclaration) =>
+    [%js
+      {
+        val type_ = "Pstr_class" |> Js.string;
+        val class_declaration_ =
+          classDeclaration
+          |> List.map(handleClassDeclaration)
+          |> Array.of_list
+          |> Js.array
+      }
+    ]
+    |> Js.Unsafe.coerce
+  | Pstr_class_type(classTypeDeclarations) =>
+    [%js
+      {
+        val type_ = "Pstr_class_type" |> Js.string;
+        val class_type_declarations_ =
+          classTypeDeclarations
+          |> List.map(handleClassTypeDeclaration)
+          |> Array.of_list
+          |> Js.array
+      }
+    ]
+    |> Js.Unsafe.coerce
+  | Pstr_attribute(attribute) =>
+    [%js
+      {
+        val type_ = "Pstr_attribute" |> Js.string;
+        val attribute = attribute |> handleAttribute
+      }
+    ]
+    |> Js.Unsafe.coerce
+  | Pstr_extension(extension, attributes) =>
     %js
-    {val type_ = "TODO: Pstr_attribute" |> Js.string}
-  | Pstr_extension(_extension, _attributes) =>
-    %js
-    {val type_ = "TODO: Pstr_extension" |> Js.string}
+    {
+      val type_ = "Pstr_extension" |> Js.string;
+      val extension = extension |> handleExtension;
+      val attributes =
+        attributes |> List.map(handleAttribute) |> Array.of_list |> Js.array
+    }
   }
 and handleStructureItem = ({pstr_desc, pstr_loc}) => {
   %js
