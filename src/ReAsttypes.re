@@ -61,7 +61,7 @@ let handleArgLabel = argLabel =>
 
 let handleStringLoc = ({txt, loc}) => [%js
   {
-    val type_ = "Asttypes.loc(string)" |> Js.string;
+    val type_ = "string Asttypes.loc" |> Js.string;
     val txt = txt |> Js.string;
     val loc = ReLocation.handleLocation(loc)
   }
@@ -69,7 +69,7 @@ let handleStringLoc = ({txt, loc}) => [%js
 
 let handleIdLoc = ({txt, loc}) => [%js
   {
-    val type_ = "Asttypes.loc(Longident.t)" |> Js.string;
+    val type_ = "Longident.t Asttypes.loc" |> Js.string;
     val txt = txt |> ReLongident.handleLongident;
     val loc = ReLocation.handleLocation(loc)
   }

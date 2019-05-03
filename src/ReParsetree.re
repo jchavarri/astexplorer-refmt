@@ -1403,7 +1403,7 @@ and handleExtensionConstructor =
     val type_ = "extension_constructor" |> Js.string;
     val pext_name_ = ReAsttypes.handleStringLoc(pext_name);
     val pext_kind_ = pext_kind |> handleExtConstructorKind;
-    val pexp_loc_ = ReLocation.handleLocation(pext_loc);
+    val pext_loc_ = ReLocation.handleLocation(pext_loc);
     val pext_attributes_ =
       pext_attributes
       |> List.map(handleAttribute)
