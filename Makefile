@@ -17,11 +17,11 @@ dev:
 
 .PHONY: build-prod
 prod:
-	yarn install
+	pnpm install
 	$(DUNE) build
 	mkdir -p dist
 	chmod -R 777 dist
-	yarn build:prod
+	pnpm build:prod
 
 .PHONY: clean
 clean: ## Clean artifacts
@@ -45,7 +45,7 @@ create-switch: ## Create opam switch
 
 .PHONY: install
 install:
-	yarn install
+	pnpm install
 	$(DUNE) build @install
 	opam install . --deps-only --with-test
 
