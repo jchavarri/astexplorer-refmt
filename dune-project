@@ -13,7 +13,9 @@
 
 (license ISC)
 
-(maintainers "Javier Chávarri <javier.chavarri@gmail.com>")
+(maintainers
+ "Javier Chávarri <javier.chavarri@gmail.com>"
+ "Pedro Lisboa <pedrobslisboa@gmail.com>")
 
 (authors "Javier Chávarri <javier.chavarri@gmail.com>")
 
@@ -25,14 +27,16 @@
   (ocaml
    (>= 5.0.0))
   (reason
-   (>= 3.14.0))
+   (>= 3.17.2))
   (js_of_ocaml-ppx
-   (>= 5.9.0))
+   (>= 6.2.0))
   ; Library dependencies
   (js_of_ocaml
-   (>= 5.9.0))
+   (>= 6.2.0))
+  (yojson
+   (>= 3.0.0))
   (ppxlib
-   (> 0.23.0))
+   (= 0.37.0))
   ; Dev dependencies
   (ocamlformat
    (and

@@ -1,4 +1,10 @@
 (executable
  (name ast_explorer_refmt)
- (libraries reason ppxlib js_of_ocaml ppxlib.astlib compiler-libs.bytecomp)
+ (libraries
+  reason
+  ppxlib
+  yojson
+  js_of_ocaml
+  ppxlib.astlib
+  compiler-libs.common)
  (modes js))

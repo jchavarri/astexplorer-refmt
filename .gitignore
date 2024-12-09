@@ -8,3 +8,4 @@ _opam
 _release
 dist
 node_modules
+ast_explorer_refmt.bc.js

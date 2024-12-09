@@ -19,8 +19,11 @@
   },
   "homepage": "https://github.com/jchavarri/astexplorer-refmt",
   "license": "MIT",
-  "main": "dist/AstExplorerRefmt.bc.js",
+  "main": "dist/ast_explorer_refmt.bc.js",
   "scripts": {
-    "build:prod": "esy build:prod && esy cp '#{self.target_dir}/default/src/AstExplorerRefmt.bc.js' ./dist"
+    "build:prod": "mkdir -p dist && cp _build/default/src/ast_explorer_refmt.bc.js ./dist/ast_explorer_refmt.bc.js"
+  },
+  "devDependencies": {
+    "serve": "^14.2.4"
   }
 }
