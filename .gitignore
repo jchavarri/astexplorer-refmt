@@ -1,8 +1,10 @@
-.merlin
-node_modules
-_esy
-_release
 *.byte
-*.native
 *.install
+*.native
+_build
+.esy
+.merlin
+_opam
+_release
 dist
+node_modules

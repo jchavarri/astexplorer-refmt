@@ -1,6 +1,4 @@
 (executable
-  (name AstExplorerRefmt)
-  (public_name AstExplorerRefmt.exe)
-  (libraries reason)
-  (preprocess (pps js_of_ocaml-ppx))
-)
+ (name ast_explorer_refmt)
+ (libraries reason ppxlib js_of_ocaml ppxlib.astlib compiler-libs.bytecomp)
+ (modes js))
