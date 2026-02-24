@@ -25,7 +25,7 @@
  (allow_empty)
  (depends
   (ocaml
-   (>= 5.0.0))
+   (>= 5.4.0))
   (reason
    (>= 3.17.2))
   (js_of_ocaml-ppx
@@ -33,14 +33,12 @@
   ; Library dependencies
   (js_of_ocaml
    (>= 6.2.0))
-  (yojson
-   (>= 3.0.0))
-  (ppxlib
-   (= 0.37.0))
+  yojson
+  ppxlib
   ; Dev dependencies
   (ocamlformat
    (and
-    (= 0.26.2)
+    (= 0.28.1)
     :with-dev-setup))
   ; We use ocamlformat on the tests
   (ocaml-lsp-server :with-dev-setup)))

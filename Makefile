@@ -41,7 +41,7 @@ format-check:
 
 .PHONY: create-switch
 create-switch: ## Create opam switch
-	opam switch create . 5.2.1 --deps-only --with-dev-setup -y
+	opam switch create . 5.4.1 --deps-only --with-dev-setup -y
 
 .PHONY: install
 install:

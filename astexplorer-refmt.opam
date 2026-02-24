@@ -11,13 +11,13 @@ homepage: "https://github.com/jchavarri/astexplorer-refmt"
 bug-reports: "https://github.com/jchavarri/astexplorer-refmt/issues"
 depends: [
   "dune" {>= "3.8"}
-  "ocaml" {>= "5.0.0"}
+  "ocaml" {>= "5.4.0"}
   "reason" {>= "3.17.2"}
   "js_of_ocaml-ppx" {>= "6.2.0"}
   "js_of_ocaml" {>= "6.2.0"}
-  "yojson" {>= "3.0.0"}
-  "ppxlib" {= "0.37.0"}
-  "ocamlformat" {= "0.26.2" & with-dev-setup}
+  "yojson"
+  "ppxlib"
+  "ocamlformat" {= "0.28.1" & with-dev-setup}
   "ocaml-lsp-server" {with-dev-setup}
   "odoc" {with-doc}
 ]
