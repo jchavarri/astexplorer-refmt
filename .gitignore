@@ -2,6 +2,7 @@
 *.install
 *.native
 _build
+.DS_Store
 .esy
 .merlin
 _opam

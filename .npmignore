@@ -1,8 +1,32 @@
-.merlin
-node_modules
-_esy
-_release
+# Source files
+src/
+*.ml
+*.re
+
+# Build artifacts
+_build/
+_opam/
+_release/
 *.byte
 *.native
 *.install
-esy.lock
+
+# Development files
+.ocamlformat
+.merlin
+.esy/
+Makefile
+dune
+dune-project
+*.opam
+*.opam.template
+
+# OS files
+.DS_Store
+
+# Package manager files
+node_modules/
+pnpm-lock.yaml
+
+# Example/docs
+src/example/

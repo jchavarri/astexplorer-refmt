@@ -12,7 +12,7 @@
   "author": "jchavarri",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/jchavarri/astexplorer-refmt"
+    "url": "git+https://github.com/jchavarri/astexplorer-refmt.git"
   },
   "bugs": {
     "url": "https://github.com/jchavarri/astexplorer-refmt/issues"
@@ -20,6 +20,9 @@
   "homepage": "https://github.com/jchavarri/astexplorer-refmt",
   "license": "MIT",
   "main": "dist/ast_explorer_refmt.bc.js",
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build:prod": "mkdir -p dist && cp _build/default/src/ast_explorer_refmt.bc.js ./dist/ast_explorer_refmt.bc.js"
   },
